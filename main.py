@@ -71,12 +71,10 @@ def casinha():
     spiderman_png = transform.scale(spiderman_png, (300, 300))
     spider_font = font.Font("spiderfont.ttf", 40)
 
-    sol_x = 150
-    sol_y = 150
+    sol_x, sol_y = 150, 150
     sol_raio = 50
 
-    nuvem_x = 800
-    nuvem_y = 100
+    nuvem_x, nuvem_y = 800, 100
     vel_nuvem = 200 
 
     tamanho_raio = 30
@@ -115,10 +113,8 @@ def casinha():
         if keys[K_w] or keys[K_UP]: sol_y -= 400 * dt
         if keys[K_s] or keys[K_DOWN]: sol_y += 400 * dt
 
-        if sol_x < sol_raio: sol_x = sol_raio
-        if sol_x > largura - sol_raio: sol_x = largura - sol_raio
-        if sol_y < sol_raio: sol_y = sol_raio
-        if sol_y > altura - sol_raio: sol_y = altura - sol_raio
+        sol_x = max(sol_raio, min(largura - sol_raio, sol_x))
+        sol_y = max(sol_raio, min(altura - sol_raio, sol_y))
 
         nuvem_x += vel_nuvem * dt
         if nuvem_x > largura - 150 or nuvem_x < 0:
@@ -179,67 +175,66 @@ def forca_pygame():
     display.set_caption("Forca - PyGame")
     clock = time.Clock()
     
-    temas_frutas = ["MACA", "BANANA", "LARANJA", "MELANCIA", "UVA"]
-    palavra = random.choice(temas_frutas)
-    letras_certas = []
+    palavras = ["MACA","BANANA","LARANJA","MELANCIA","UVA"]
+    palavra = random.choice(palavras)
+    letras = []
     vidas = 6
     estado = "JOGANDO"
     modo_palavra = False
-    chute_total = ""
-    
+    chute = ""
+
     running = True
     while running:
         clock.tick(30)
-        tela.fill((255, 255, 255))
-        
+        tela.fill((255,255,255))
+
         for ev in event.get():
             if ev.type == QUIT:
                 running = False
-            
-            if ev.type == KEYDOWN and estado == "JOGANDO":
-                if ev.key == K_RETURN:
-                    if modo_palavra:
-                        if chute_total == palavra:
-                            for letra in palavra:
-                                if letra not in letras_certas:
-                                    letras_certas.append(letra)
+
+            if ev.type == KEYDOWN:
+                if ev.key == K_ESCAPE:
+                    running = False
+
+                if estado == "JOGANDO":
+                    if ev.key == K_RETURN:
+                        if modo_palavra:
+                            if chute == palavra:
+                                letras = list(palavra)
+                            else:
+                                vidas -= 1
+                            chute = ""
+                            modo_palavra = False
+                        else:
+                            modo_palavra = True
+
+                    elif modo_palavra:
+                        if ev.key == K_BACKSPACE:
+                            chute = chute[:-1]
+                        elif K_a <= ev.key <= K_z:
+                            chute += chr(ev.key).upper()
+
+                    elif K_a <= ev.key <= K_z:
+                        l = chr(ev.key).upper()
+                        if l in palavra:
+                            if l not in letras:
+                                letras.append(l)
                         else:
                             vidas -= 1
-                        chute_total = ""
-                        modo_palavra = False
-                    else:
-                        modo_palavra = True
-                
-                elif modo_palavra:
-                    if ev.key == K_BACKSPACE:
-                        chute_total = chute_total[:-1]
-                    elif ev.key >= K_a and ev.key <= K_z:
-                        chute_total += chr(ev.key).upper()
 
-                elif ev.key >= K_a and ev.key <= K_z:
-                    letra = chr(ev.key).upper()
-                    if letra in palavra:
-                        if letra not in letras_certas:
-                            letras_certas.append(letra)
-                    else:
-                        vidas -= 1
-            
-            if ev.type == KEYDOWN and estado != "JOGANDO":
-                if ev.key == K_SPACE: 
-                    palavra = random.choice(temas_frutas)
-                    letras_certas = []
-                    vidas = 6
-                    estado = "JOGANDO"
-                    modo_palavra = False
-                    chute_total = ""
-                elif ev.key == K_ESCAPE: 
-                    running = False
-                    
+                else:
+                    if ev.key == K_SPACE:
+                        palavra = random.choice(palavras)
+                        letras = []
+                        vidas = 6
+                        estado = "JOGANDO"
+
+        # desenho boneco
         draw.line(tela,(0,0,0),(100,500),(300,500),5)
         draw.line(tela,(0,0,0),(200,500),(200,100),5)
         draw.line(tela,(0,0,0),(200,100),(400,100),5)
         draw.line(tela,(0,0,0),(400,100),(400,150),5)
-        
+
         if vidas <= 5: draw.circle(tela,(0,0,0),(400,180),30,5)
         if vidas <= 4: draw.line(tela,(0,0,0),(400,210),(400,350),5)
         if vidas <= 3: draw.line(tela,(0,0,0),(400,230),(350,300),5)
@@ -248,27 +243,31 @@ def forca_pygame():
         if vidas <= 0:
             draw.line(tela,(0,0,0),(400,350),(450,450),5)
             estado = "PERDEU"
-            
-        texto_palavra = ""
-        vitoria = True
-        for letra in palavra:
-            if letra in letras_certas:
-                texto_palavra += letra+" "
+
+        texto = ""
+        venceu = True
+        for l in palavra:
+            if l in letras:
+                texto += l+" "
             else:
-                texto_palavra += "_ "
-                vitoria = False
-                
-        if vitoria and estado == "JOGANDO":
+                texto += "_ "
+                venceu = False
+
+        if venceu and estado == "JOGANDO":
             estado = "VENCEU"
-            
-        img = fonte_padrao.render(texto_palavra,True,(0,0,0))
-        tela.blit(img,(400,500))
+
+        tela.blit(fonte_padrao.render(texto,True,(0,0,0)),(350,500))
 
         if modo_palavra:
-            txt = fonte_pequena.render("CHUTE: "+chute_total,True,(0,0,255))
-            tela.blit(txt,(400,450))
-        
+            tela.blit(fonte_pequena.render("CHUTE: "+chute,True,(0,0,255)),(350,450))
+
+        if estado == "VENCEU":
+            tela.blit(fonte_padrao.render("VENCEU! ESPACO",True,(0,255,0)),(100,50))
+        elif estado == "PERDEU":
+            tela.blit(fonte_padrao.render("PERDEU!",True,(255,0,0)),(100,50))
+
         display.update()
+
     display.quit()
 
 
@@ -276,35 +275,33 @@ def forca_pygame():
 
 
 def ppt_pygame():
-    tela = display.set_mode((800, 600))
-    display.set_caption("Jokenpo - PyGame")
-    
+    tela = display.set_mode((800,600))
     pontos = 0
     escolha_jogador = ""
     escolha_pc = ""
     resultado = "Escolha sua jogada!"
-    
+
     opcoes = ["PEDRA","PAPEL","TESOURA"]
-    
+
     running = True
     while running:
         tela.fill((200,200,200))
-        
+
         for ev in event.get():
             if ev.type == QUIT:
                 running = False
-                
+
             if ev.type == MOUSEBUTTONDOWN:
                 mx,my = ev.pos
-                
+
                 if 400 < my < 550:
                     if 100 < mx < 250: escolha_jogador = "PEDRA"
                     elif 325 < mx < 475: escolha_jogador = "PAPEL"
                     elif 550 < mx < 700: escolha_jogador = "TESOURA"
-                    
-                    if escolha_jogador != "":
+
+                    if escolha_jogador:
                         escolha_pc = random.choice(opcoes)
-                        
+
                         if escolha_jogador == escolha_pc:
                             resultado = "EMPATE!"
                         elif (escolha_jogador == "PEDRA" and escolha_pc == "TESOURA") or \
@@ -317,19 +314,20 @@ def ppt_pygame():
 
         draw.rect(tela,(100,100,100),(100,400,150,150))
         tela.blit(fonte_padrao.render("PEDRA",True,(255,255,255)),(120,460))
-        
+
         draw.rect(tela,(200,200,200),(325,400,150,150),5)
         tela.blit(fonte_padrao.render("PAPEL",True,(0,0,0)),(350,460))
-        
+
         draw.rect(tela,(255,100,100),(550,400,150,150))
         tela.blit(fonte_pequena.render("TESOURA",True,(0,0,0)),(580,460))
-        
+
         tela.blit(fonte_padrao.render("Pontos: "+str(pontos),True,(0,0,0)),(50,50))
         tela.blit(fonte_padrao.render("PC: "+escolha_pc,True,(255,0,0)),(400,150))
         tela.blit(fonte_padrao.render("Você: "+escolha_jogador,True,(0,0,255)),(100,150))
         tela.blit(fonte_padrao.render(resultado,True,(0,0,0)),(250,250))
-        
+
         display.update()
+
     display.quit()
 
 
@@ -357,10 +355,14 @@ def menu():
                     forca_pygame()
                 elif 300 < y < 350:
                     ppt_pygame()
+                elif 400 < y < 450:
+                    pygame.quit()
+                    sys.exit()
 
         tela.blit(fonte.render("1 - Casinha",True,(255,255,255)),(100,100))
         tela.blit(fonte.render("2 - Forca",True,(255,255,255)),(100,200))
         tela.blit(fonte.render("3 - PPT",True,(255,255,255)),(100,300))
+        tela.blit(fonte.render("4 - Sair",True,(255,255,255)),(100,400))
 
         display.update()
 
@@ -399,11 +401,13 @@ def login():
                             msg = ""
                         else:
                             msg = "email invalido"
+                            email = ""
                     else:
                         if validar_senha(senha):
                             menu()
                         else:
                             msg = "senha fraca"
+                            senha = ""
 
                 else:
                     if etapa == "email":
@@ -417,7 +421,7 @@ def login():
         tela.blit(fonte.render("Senha:",True,(255,255,255)),(100,250))
         tela.blit(fonte.render("*"*len(senha),True,(255,255,255)),(100,300))
 
-        if senha != "":
+        if senha:
             c = criptografar(senha)
             d = descriptografar(c)
             tela.blit(fonte.render("Cripto: "+c,True,(200,200,0)),(100,400))
@@ -427,5 +431,6 @@ def login():
 
         display.update()
 
-# INICIAR
+
+
 login()

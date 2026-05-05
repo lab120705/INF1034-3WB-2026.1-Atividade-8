@@ -164,7 +164,7 @@ def casinha():
 
         display.update()
 
-    display.quit()
+    return
 
 
 # FORCA 
@@ -268,7 +268,7 @@ def forca_pygame():
 
         display.update()
 
-    display.quit()
+    return
 
 
 # PPT 
@@ -328,7 +328,7 @@ def ppt_pygame():
 
         display.update()
 
-    display.quit()
+    return
 
 
 # MENU
